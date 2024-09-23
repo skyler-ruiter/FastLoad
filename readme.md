@@ -23,8 +23,11 @@ Our test programs currently support input files encoded using the matrix market 
 
 2. The command 'make' generates an executable file 'test' for double/single precision.
 > **cd src**
+
 > **mkdir TimeResult**
-> **mkdir PreProcess** 
+
+> **mkdir PreProcess**
+
 > **make**
 
 3. Run (give a example matrix)  
