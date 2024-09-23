@@ -1,6 +1,6 @@
 # FastLoad
 
-**FastLoad** is an open source code that optimize sparse matrix-vector multiplication (SpMV) based on CSC format on GPUs. 
+**FastLoad** is an open-source code that optimizes sparse matrix-vector multiplication (SpMV) based on CSC format on GPUs. 
 
 
 ## Contact us
@@ -22,7 +22,12 @@ Our test programs currently support input files encoded using the matrix market 
 1. Set CUDA path in the Makefile
 
 2. The command 'make' generates an executable file 'test' for double/single precision.
+> **cd src**
+> **mkdir TimeResult**
+> **mkdir PreProcess** 
 > **make**
 
 3. Run (give a example matrix)  
 > **./test ../Data/1138_bus.mtx**
+
+The result will shown in fold TimeResult and PreProcess.
