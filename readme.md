@@ -15,7 +15,7 @@ Sparse Matrix-Vector Multiplication (SpMV) on GPUs has gained significant attent
 
 
 ## Execution of FastLoad
-1 NVIDIA GPU with compute capability at least 3.5 (NVIDIA Tesla K40 as tested) * NVIDIA nvcc CUDA compiler and cuSPARSE library, both of which are included with CUDA Toolkit (CUDA v11.1 as tested)
+1 NVIDIA GPU with compute capability at least 3.5 (NVIDIA 3090ti as tested) * NVIDIA nvcc CUDA compiler and cuSPARSE library, both of which are included with CUDA Toolkit (CUDA v11.1 as tested)
 2 Ubuntu 22.04,
 Our test programs currently support input files encoded using the matrix market format.
 
