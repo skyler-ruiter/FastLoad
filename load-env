@@ -1,0 +1,9 @@
+#!/bin/bash
+
+export LD_LIBRARY_PATH=/home/skyler/papi-install/lib:$LD_LIBRARY_PATH
+
+export PAPI_REPORT=1
+export PAPI_EVENTS=PAPI_FP_OPS
+
+# set papi output file
+export PAPI_OUTPUT=/home/skyler/school/HPC_Final_Project/papi_output.txt

@@ -85,24 +85,8 @@ int main(int argc, char ** argv)
     int *nnzpercol=(int *)malloc(sizeof(int)*(colA));
     memset(nnzpercol, 0 ,sizeof(int)*(colA));
 
-/* 
-    struct timeval transpose1,transpose2;
-    double transposetime;
-    double csr2cscTime=0;
-    gettimeofday(&transpose1,NULL);
-
-    csr2csc(nnz,rowA,colA,csrcolidx,csrrowptr,csrval,&cscrowidx,&csccolptr,&nnzpercol,&cscval); //CPU
-
-    gettimeofday(&transpose2,NULL);
-    transposetime = (transpose2.tv_sec - transpose1.tv_sec) * 1000.0 + (transpose2.tv_usec - transpose1.tv_usec) / 1000.0;
-*/
-
     double csr2cscTime=0;
     csr_to_csc(csr2cscTime, rowA, colA, nnz, csrval, csrrowptr, csrcolidx, cscval, cscrowidx, csccolptr, nnzpercol);
-
-
-
-
 
     double *x= (double *)malloc(sizeof(double)*colA);
     memset(x,0,sizeof(double)*colA);
@@ -335,9 +319,6 @@ int main(int argc, char ** argv)
                sortx,
                y,
                y_goldencsr);
-
- 
-
 }
 
 

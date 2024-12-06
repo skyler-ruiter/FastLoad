@@ -1,0 +1,1 @@
+1138_bus rowA 1138 colA 1138 nnz 4054 cusparse 10.703000 Gflops 0.000758 

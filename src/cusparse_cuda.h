@@ -89,12 +89,12 @@ void call_cusparse_spmv(char *filename,
     CHECK_CUSPARSE( cusparseSpMV_bufferSize(
                                  handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                  &alpha, matA, vecX, &beta, vecY, CUDA_R_64F,
-                                 CUSPARSE_MV_ALG_DEFAULT, &bufferSize) )
+                                 CUSPARSE_SPMV_ALG_DEFAULT, &bufferSize) )
     CHECK_CUDA( cudaMalloc(&dBuffer, bufferSize) )
 
     CHECK_CUSPARSE( cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                  &alpha, matA, vecX, &beta, vecY, CUDA_R_64F,
-                                 CUSPARSE_MV_ALG_DEFAULT, dBuffer) )
+                                 CUSPARSE_SPMV_ALG_DEFAULT, dBuffer) )
 
     cudaDeviceSynchronize();
     gettimeofday(&tcusparse2, NULL);

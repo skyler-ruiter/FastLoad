@@ -61,8 +61,7 @@ enum
     STEPS = 5,
 
     // The 5-bit SHFL mask for logically splitting warps into sub-segments starts 8-bits up
-    SHFL_C = ((-1 << STEPS) & 31) << 8
-    //SHFL_C = 0
+    SHFL_C = (31 << 8)
 };
 
 
@@ -89,9 +88,6 @@ double scan_32_shfl(double    x)
     }
     return x;
 }
-
-
-
 
 __device__ __forceinline__ 
 double ScanWarp(double val) {
@@ -376,7 +372,6 @@ void FastLoad_spmv(char *filename,
                                                    d_x,
                                                    d_y);
 
-
     timeval t1, t2;
     double time_cuda_spmv_base = 0;
     for(int i =0 ; i<100;i++)
@@ -423,12 +418,12 @@ void FastLoad_spmv(char *filename,
     if (error_count_slide_cuda == 0)
     {
         printf("Check FASTLOAD GPU PASS! (%f ms , %4.2f GFlops)\n", time_cuda_spmv_base, gflops);
-        FILE *fout = fopen("TimeResult/results_slidecuda.txt", "a");
-        if (fout == NULL)
-            printf("Writing results fails.\n");
-        fprintf(fout, "%s m %d n %d nnz %d FastLoad %f gflops %f\n",
-                filename,rowA,colA,nnz,time_cuda_spmv_base, gflops);
-        fclose(fout);
+        // FILE *fout = fopen("TimeResult/results_slidecuda.txt", "a");
+        // if (fout == NULL)
+        //     printf("Writing results fails.\n");
+        // fprintf(fout, "%s m %d n %d nnz %d FastLoad %f gflops %f\n",
+        //         filename,rowA,colA,nnz,time_cuda_spmv_base, gflops);
+        // fclose(fout);
     }
     else
     {
