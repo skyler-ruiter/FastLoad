@@ -174,6 +174,145 @@ void csc_spmv(int m, int n, int nnz, int *csc_ptr, int *csc_rowidx, double *csc_
     cudaFree(d_y);
 }
 
+__global__ void FastLoad__GPU_Kernel(int rowA, int colA,int nnz,
+                                  int tilenum,
+                                  int *d_tile_ptr,
+                                  //int *d_tile_tall,
+                                  int *d_tile_len,
+                                  int *d_tile_colidx,
+                                  int *d_format,
+                                  //int *d_countrow,
+                                  //int *d_segmentoffset,
+                                  int *d_sortrowindex,
+                                  int *d_sortrowidx,
+                                  double *d_sortval,
+                                  double *d_x,
+                                  double *d_y)
+{
+    int global_id = blockIdx.x *blockDim.x + threadIdx.x;
+    const int th_tile = global_id >> 5;
+    __shared__ double s_x[warpperblock *slidesize];
+    __shared__ double s_y[warpperblock *slidesize];
+    __shared__ double s_s[warpperblock *slidesize];
+
+    const int local_warp_id = threadIdx.x >> 5;
+    const int lane_id = (slidesize -1) & threadIdx.x;
+    double *s_x_warp = &s_x[local_warp_id *slidesize];
+    double *s_y_warp = &s_y[local_warp_id *slidesize];
+    double *s_s_warp = &s_s[local_warp_id *slidesize];
+    //double yval =0;
+
+    if(th_tile < tilenum)
+    {
+        int tilelen = d_tile_len[th_tile];
+        int tile_start = d_tile_ptr[th_tile];
+        int tile_stop = d_tile_ptr[th_tile+1];
+        //int tile_tall = d_tile_tall[th_tile];
+        int tile_colidx = d_tile_colidx[th_tile];
+        int format = d_format[th_tile];
+        switch(format)
+        {
+            case 0:
+            {
+                int j = tile_start + lane_id ;
+                int d_rowidx = d_sortrowidx[j];
+                if(lane_id <tilelen)
+                {
+                    s_x_warp[lane_id] = d_x[tile_colidx+lane_id];
+                    atomicAdd(&d_y[d_rowidx], d_sortval[j] * s_x_warp[lane_id]);
+          
+                }
+            }
+            break;
+            
+            case 1:
+            {
+                int j = tile_start + lane_id ;
+                int d_rowidx = d_sortrowidx[j];
+                double val=0;
+                //s_y_warp[lane_id] = d_sortval[j] * d_x[tile_colidx+lane_id];
+                val =  d_sortval[j] * d_x[tile_colidx + lane_id] ;
+
+
+                double tmp_sum =__shfl_up_sync(0xffffffff,val,1);
+                if(lane_id /1 !=0)
+                {val += tmp_sum;}
+
+                tmp_sum =__shfl_up_sync(0xffffffff,val,2);
+                if(lane_id /2 !=0)
+                {val += tmp_sum;}
+
+                tmp_sum =__shfl_up_sync(0xffffffff,val,4);
+                if(lane_id /4 !=0)
+                {val += tmp_sum;}
+
+                tmp_sum =__shfl_up_sync(0xffffffff,val,8);
+                if(lane_id / 8 != 0)
+                {val += tmp_sum;}
+
+                tmp_sum =__shfl_up_sync(0xffffffff,val,16);
+                if(lane_id /16 != 0)
+                {val += tmp_sum;}
+                
+
+                 if(lane_id ==31)
+                    {
+                        atomicAdd(&d_y[d_rowidx], val);
+                    }   
+            }
+
+            break;
+            
+
+            case 2:
+            {
+                int j = tile_start + lane_id ;
+                int d_rowidx = d_sortrowidx[j];
+                double val=0;
+                double val_tmp=0;
+                //s_y_warp[lane_id] = d_sortval[j] * d_x[tile_colidx+lane_id];
+                val =  d_sortval[j] * d_x[tile_colidx + lane_id] ;
+                val_tmp =  d_sortval[j] * d_x[tile_colidx + lane_id];
+
+                double tmp_sum =__shfl_up_sync(0xffffffff,val,1);
+                if(lane_id /1 !=0)
+                {val += tmp_sum;}
+
+                tmp_sum =__shfl_up_sync(0xffffffff,val,2);
+                if(lane_id /2 !=0)
+                {val += tmp_sum;}
+
+                tmp_sum =__shfl_up_sync(0xffffffff,val,4);
+                if(lane_id /4 !=0)
+                {val += tmp_sum;}
+
+                tmp_sum =__shfl_up_sync(0xffffffff,val,8);
+                if(lane_id / 8 != 0)
+                {val += tmp_sum;}
+
+                tmp_sum =__shfl_up_sync(0xffffffff,val,16);
+                if(lane_id /16 != 0)
+                {val += tmp_sum;}
+
+                int judge = d_sortrowindex[j];
+                    
+                judge = judge-1;
+                double scan_sum = __shfl_down(val,judge);
+                    
+                val_tmp = scan_sum - val +val_tmp;
+                    
+                if(d_sortrowindex[j] !=0)
+                {
+                    atomicAdd(&d_y[d_rowidx], val_tmp);
+                }
+            }
+            break;
+            
+        }
+    }
+
+}
+
 void fastload(slide_matrix *matrix, int nnz, int N, int M, double *x, double *y) {
 
   int tilenum = matrix->tilenum;
@@ -223,7 +362,7 @@ void fastload(slide_matrix *matrix, int nnz, int N, int M, double *x, double *y)
   int num_threads = slidesize *warpperblock;
   int num_blocks = ceil(( double)tilenum / (double)warpperblock); 
 
-  FastLoad___kernel<<<num_blocks, num_threads>>>(M,N,nnz,
+  FastLoad__GPU_Kernel<<<num_blocks, num_threads>>>(M,N,nnz,
                                                  tilenum,
                                                  d_tile_ptr,
                                                  d_tile_len,
@@ -292,7 +431,7 @@ int main(int argc, char ** argv)
   init(x, N);
 
   // sparsify dense_A
-  sparsify(dense_A, M * N, 50);
+  sparsify(dense_A, M * N, 10);
 
   // print A and x
   // std::cout << "A: " << std::endl;
