@@ -478,7 +478,7 @@ int main(int argc, char ** argv)
   int *csc_ptr = (int *)malloc((N + 1) * sizeof(int));
 
   // generate random csc matrix
-  generate_random_csc_matrix(M, N, 10, csc_val, csc_rowidx, csc_ptr);
+  generate_random_csc_matrix(M, N, 50, csc_val, csc_rowidx, csc_ptr);
 
   // get nnz
     nnz = csc_ptr[N];
