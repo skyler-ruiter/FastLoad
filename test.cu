@@ -24,6 +24,22 @@ void sparsify(double* v, long const N, double sparsity) {
     }
 }
 
+// method to generate a random csc sparse matrix
+void generate_random_csc_matrix(int M, int N, double sparsity, double* csc_val, int* csc_rowidx, int* csc_ptr) {
+    int nnz = 0;
+    for (int i = 0; i < N; i++) {
+        csc_ptr[i] = nnz;
+        for (int j = 0; j < M; j++) {
+            if ((rand() % 100) < sparsity) {
+                csc_val[nnz] = static_cast<double>(rand()) / RAND_MAX;
+                csc_rowidx[nnz] = j;
+                nnz++;
+            }
+        }
+    }
+    csc_ptr[N] = nnz;
+}
+
 // convert to CSC format from dense
 void dense2csc(double* A, int M, int N, double* csc_val, int* csc_rowidx, int* csc_ptr) {
     int nnz = 0;
@@ -420,49 +436,52 @@ int main(int argc, char ** argv)
     // csc_spmv_cpu(9, 9, 50, test_csc_ptr, test_csc_rowidx, test_csc_val, test_x, test_y);
   }
 
-  // allocate memory for matrices
-  double *dense_A = (double *)malloc(M * N * sizeof(double));
+//   // allocate memory for matrices
+//   double *dense_A = (double *)malloc(M * N * sizeof(double));
   double *x = (double *)malloc(N * sizeof(double));
   double *y = (double *)malloc(M * sizeof(double));
   memset(y, 0, M * sizeof(double));
 
-  // initialize dense_A and x
-  init(dense_A, M * N);
+//   // initialize dense_A and x
+//   init(dense_A, M * N);
   init(x, N);
 
-  // sparsify dense_A
-  sparsify(dense_A, M * N, 10);
+//   // sparsify dense_A
+//   sparsify(dense_A, M * N, 10);
 
-  // print A and x
-  // std::cout << "A: " << std::endl;
-  // for (int i = 0; i < M; i++) {
-  //     for (int j = 0; j < N; j++) {
-  //         std::cout << dense_A[i * N + j] << " ";
-  //     }
-  //     std::cout << std::endl;
-  // }
-  // std::cout << std::endl;
-  // std::cout << "x: " << std::endl;
-  // for (int i = 0; i < N; i++) {
-  //     std::cout << x[i] << " ";
-  // }
-  // std::cout << std::endl;
+//   // print A and x
+//   // std::cout << "A: " << std::endl;
+//   // for (int i = 0; i < M; i++) {
+//   //     for (int j = 0; j < N; j++) {
+//   //         std::cout << dense_A[i * N + j] << " ";
+//   //     }
+//   //     std::cout << std::endl;
+//   // }
+//   // std::cout << std::endl;
+//   // std::cout << "x: " << std::endl;
+//   // for (int i = 0; i < N; i++) {
+//   //     std::cout << x[i] << " ";
+//   // }
+//   // std::cout << std::endl;
 
-  // get nnz
+//   // get nnz
   int nnz = 0;
-  for (int i = 0; i < M * N; i++) {
-      if (dense_A[i] != 0) {
-          nnz++;
-      }
-  }
+//   for (int i = 0; i < M * N; i++) {
+//       if (dense_A[i] != 0) {
+//           nnz++;
+//       }
+//   }
 
   // allocate memory for csc matrix
-  double *csc_val = (double *)malloc(nnz * sizeof(double));
-  int *csc_rowidx = (int *)malloc(nnz * sizeof(int));
+  double *csc_val = (double *)malloc(M * N * sizeof(double)); // over-allocate to handle sparsity
+  int *csc_rowidx = (int *)malloc(M * N * sizeof(int)); // over-allocate to handle sparsity
   int *csc_ptr = (int *)malloc((N + 1) * sizeof(int));
 
-  // convert dense_A to csc format
-  dense2csc(dense_A, M, N, csc_val, csc_rowidx, csc_ptr);
+  // generate random csc matrix
+  generate_random_csc_matrix(M, N, 10, csc_val, csc_rowidx, csc_ptr);
+
+  // get nnz
+    nnz = csc_ptr[N];
 
   // if M=N=9 use the test matrix
   if (M == 9 && N == 9) {
@@ -633,7 +652,7 @@ int main(int argc, char ** argv)
   printf("Error count fastload: %d\n", error_count_check_fastload);
 
   // free memory
-    free(dense_A);
+    // free(dense_A);
     free(x);
     free(y);
     free(csc_val);
