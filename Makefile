@@ -9,7 +9,6 @@ PAPI_LIB = /home/skyler/papi-install/lib
 
 NVCC_FLAGS = -O3 -w -arch=compute_61 -code=sm_86 -gencode=arch=compute_61,code=sm_86
 
-
 #ENVIRONMENT_PARAMETERS
 CUDA_INSTALL_PATH = /usr/local/cuda-11.1
 
