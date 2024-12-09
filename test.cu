@@ -512,7 +512,7 @@ int main(int argc, char ** argv)
   memset(y_golden, 0, M * sizeof(double));
   
   // call csc_spmv_cpu
-//   csc_spmv_cpu(M, N, nnz, csc_ptr, csc_rowidx, csc_val, x, y_golden);
+  csc_spmv_cpu(M, N, nnz, csc_ptr, csc_rowidx, csc_val, x, y_golden);
 
   // print out y_golden
 //   std::cout << "y_golden: " << std::endl;
