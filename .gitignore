@@ -1,3 +1,4 @@
 test
 *.ncu-rep
-load-env
+load-papi
+profiling/*.ncu-rep

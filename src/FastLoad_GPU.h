@@ -146,12 +146,9 @@ __device__ double ScanWarp1(double val, const int localid) {
 __global__ void FastLoad___kernel(int rowA, int colA,int nnz,
                                   int tilenum,
                                   int *d_tile_ptr,
-                                  //int *d_tile_tall,
                                   int *d_tile_len,
                                   int *d_tile_colidx,
                                   int *d_format,
-                                  //int *d_countrow,
-                                  //int *d_segmentoffset,
                                   int *d_sortrowindex,
                                   int *d_sortrowidx,
                                   double *d_sortval,
@@ -169,14 +166,12 @@ __global__ void FastLoad___kernel(int rowA, int colA,int nnz,
     double *s_x_warp = &s_x[local_warp_id *slidesize];
     double *s_y_warp = &s_y[local_warp_id *slidesize];
     double *s_s_warp = &s_s[local_warp_id *slidesize];
-    //double yval =0;
 
     if(th_tile < tilenum)
     {
         int tilelen = d_tile_len[th_tile];
         int tile_start = d_tile_ptr[th_tile];
         int tile_stop = d_tile_ptr[th_tile+1];
-        //int tile_tall = d_tile_tall[th_tile];
         int tile_colidx = d_tile_colidx[th_tile];
         int format = d_format[th_tile];
         switch(format)
@@ -193,7 +188,7 @@ __global__ void FastLoad___kernel(int rowA, int colA,int nnz,
                 }
             }
             break;
-            
+
             case 1:
             {
                 int j = tile_start + lane_id ;
@@ -229,10 +224,7 @@ __global__ void FastLoad___kernel(int rowA, int colA,int nnz,
                         atomicAdd(&d_y[d_rowidx], val);
                     }   
             }
-
             break;
-            
-
             case 2:
             {
                 int j = tile_start + lane_id ;
@@ -276,12 +268,9 @@ __global__ void FastLoad___kernel(int rowA, int colA,int nnz,
                 }
             }
             break;
-            
         }
     }
-
 }
-
 
 void FastLoad_spmv(char *filename,
                 slide_matrix *matrix,
@@ -292,57 +281,22 @@ void FastLoad_spmv(char *filename,
                 double *y,
                 double *y_golden)
 {
-
     int tilenum = matrix->tilenum;
     int *tile_ptr = matrix->tile_ptr;
-    //int *tile_tall = matrix->tile_tall;
     int *tile_len = matrix->tile_len;
     int *tile_colidx = matrix->tile_colidx;
     int *tile_format = matrix->tile_format;
     int *sortrowidx = matrix->sortrowidx;
     double *sortval = matrix->sortval;
-
-//    int *countrow = matrix->countrow;
-//    int *segmentoffset = matrix->segmentoffset;
     int segsum = matrix->segsum;
     int *sortrowindex = matrix->sortrowindex;
-
-
     int *d_tile_ptr;
-    //int *d_tile_tall;
     int *d_tile_len;
     int *d_tile_colidx;
     int *d_format;
     int *d_sortrowidx;
     double *d_sortval;
-
-//    int *d_countrow;
-//    int *d_segmentoffset;
     int *d_sortrowindex;
-
-    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_tile_ptr, (tilenum + 1) * sizeof(int)));
-    //CHECK_CUDA_ERROR(cudaMalloc((void **)&d_tile_tall, (tilenum)*sizeof(int)));
-    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_tile_len, (tilenum)*sizeof(int)));
-    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_tile_colidx, (tilenum)*sizeof(int)));
-    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_format, (tilenum)*sizeof(int)));
-    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_sortrowidx,(nnz)*sizeof(int)));
-    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_sortval,(nnz)*sizeof(double)));
-
-//    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_countrow,(tilenum+1)*sizeof(int)));
-//    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_segmentoffset,(segsum+1)*sizeof(int)));
-    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_sortrowindex,(nnz)*sizeof(int)));
-
-    CHECK_CUDA_ERROR(cudaMemcpy(d_tile_ptr, tile_ptr, (tilenum + 1) * sizeof(int), cudaMemcpyHostToDevice));
-    //CHECK_CUDA_ERROR(cudaMemcpy(d_tile_tall, tile_tall, (tilenum) * sizeof(int), cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERROR(cudaMemcpy(d_tile_len, tile_len, (tilenum) * sizeof(int), cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERROR(cudaMemcpy(d_tile_colidx, tile_colidx, (tilenum) * sizeof(int), cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERROR(cudaMemcpy(d_format, tile_format, (tilenum) * sizeof(int), cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERROR(cudaMemcpy(d_sortrowidx, sortrowidx, (nnz) * sizeof(int), cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERROR(cudaMemcpy(d_sortval, sortval, (nnz) * sizeof(double), cudaMemcpyHostToDevice));
-
-//    CHECK_CUDA_ERROR(cudaMemcpy(d_countrow, countrow, (tilenum+1) * sizeof(int), cudaMemcpyHostToDevice));
-//    CHECK_CUDA_ERROR(cudaMemcpy(d_segmentoffset, segmentoffset, (segsum+1) * sizeof(int), cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERROR(cudaMemcpy(d_sortrowindex, sortrowindex, (nnz) * sizeof(int), cudaMemcpyHostToDevice));
 
     double *d_x;
     double *d_y;
@@ -350,29 +304,47 @@ void FastLoad_spmv(char *filename,
     cudaMalloc((void **)&d_x, colA * sizeof(double));
     cudaMalloc((void **)&d_y, rowA * sizeof(double));
 
-    cudaMemcpy(d_x, x, colA * sizeof(double), cudaMemcpyHostToDevice);
-    
+    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_tile_ptr, (tilenum + 1) * sizeof(int)));
+    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_tile_len, (tilenum)*sizeof(int)));
+    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_tile_colidx, (tilenum)*sizeof(int)));
+    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_format, (tilenum)*sizeof(int)));
+    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_sortrowidx,(nnz)*sizeof(int)));
+    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_sortval,(nnz)*sizeof(double)));
+    CHECK_CUDA_ERROR(cudaMalloc((void **)&d_sortrowindex,(nnz)*sizeof(int)));
 
+    timeval t1, t2;
+    double time_memcpy_h2d = 0, time_memcpy_d2h = 0;
+
+    gettimeofday(&t1, NULL);
+    CHECK_CUDA_ERROR(cudaMemcpy(d_tile_ptr, tile_ptr, (tilenum + 1) * sizeof(int), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERROR(cudaMemcpy(d_tile_len, tile_len, (tilenum) * sizeof(int), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERROR(cudaMemcpy(d_tile_colidx, tile_colidx, (tilenum) * sizeof(int), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERROR(cudaMemcpy(d_format, tile_format, (tilenum) * sizeof(int), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERROR(cudaMemcpy(d_sortrowidx, sortrowidx, (nnz) * sizeof(int), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERROR(cudaMemcpy(d_sortval, sortval, (nnz) * sizeof(double), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERROR(cudaMemcpy(d_sortrowindex, sortrowindex, (nnz) * sizeof(int), cudaMemcpyHostToDevice));
+    cudaMemcpy(d_x, x, colA * sizeof(double), cudaMemcpyHostToDevice);
+    gettimeofday(&t2, NULL);
+    time_memcpy_h2d += (t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0;
+    
     int num_threads = slidesize *warpperblock;
     int num_blocks = ceil(( double)tilenum / (double)warpperblock); 
 
-
+    // dry run
     FastLoad___kernel<<<num_blocks, num_threads>>>(rowA,colA,nnz,
                                                    tilenum,
                                                    d_tile_ptr,
-                                                   //d_tile_tall,
                                                    d_tile_len,
                                                    d_tile_colidx,
                                                    d_format,
-                                                   //d_countrow,
-                                                   //d_segmentoffset,
                                                    d_sortrowindex,
                                                    d_sortrowidx,
                                                    d_sortval,
                                                    d_x,
                                                    d_y);
 
-    timeval t1, t2;
+
+
     double time_cuda_spmv_base = 0;
     for(int i =0 ; i<100;i++)
     {
@@ -402,10 +374,11 @@ void FastLoad_spmv(char *filename,
     }
     time_cuda_spmv_base /= 100;
     double gflops = 2 * (double)nnz * 1.0e-6 / time_cuda_spmv_base;
-
-
     
+    gettimeofday(&t1, NULL);
     CHECK_CUDA_ERROR(cudaMemcpy(y, d_y, rowA * sizeof(double), cudaMemcpyDeviceToHost));
+    gettimeofday(&t2, NULL);
+    time_memcpy_d2h += (t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0;
 
     int error_count_slide_cuda = 0;
     for (int i = 0; i < rowA; i++)
@@ -415,43 +388,23 @@ void FastLoad_spmv(char *filename,
             
         }
 
-    if (error_count_slide_cuda == 0)
-    {
+    if (error_count_slide_cuda == 0) { 
         printf("Check FASTLOAD GPU PASS! (%f ms , %4.2f GFlops)\n", time_cuda_spmv_base, gflops);
-        // FILE *fout = fopen("TimeResult/results_slidecuda.txt", "a");
-        // if (fout == NULL)
-        //     printf("Writing results fails.\n");
-        // fprintf(fout, "%s m %d n %d nnz %d FastLoad %f gflops %f\n",
-        //         filename,rowA,colA,nnz,time_cuda_spmv_base, gflops);
-        // fclose(fout);
+        // print mem to host and device tiems
+        printf("memcpy H2D time: %f ms\n", time_memcpy_h2d);
+        printf("memcpy D2H time: %f ms\n", time_memcpy_d2h);
     }
-    else
-    {
+    else {
         printf("Check NO PASS! error_count_slide_cuda = %d \n", error_count_slide_cuda);
-        FILE *fout = fopen("TimeResult/results_slidecuda.txt", "a");
-        if (fout == NULL)
-            printf("Writing results fails.\n");
-        fprintf(fout, "error mtx: %s\n",
-                                  filename);
-        fclose(fout);
     }
 
     CHECK_LAST_CUDA_ERROR();
-
     cudaFree(d_tile_ptr);
-    //cudaFree(d_tile_tall);
     cudaFree(d_tile_len);
     cudaFree(d_tile_colidx);
     cudaFree(d_format);
     cudaFree(d_sortrowidx);
     cudaFree(d_sortval);
-
-//    cudaFree(d_countrow);
-//    cudaFree(d_segmentoffset);
     cudaFree(d_sortrowindex);
-
-
-
-
 }
 
