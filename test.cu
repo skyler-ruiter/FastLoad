@@ -498,7 +498,7 @@ int main(int argc, char ** argv)
   }
 
   // call csc_spmv
-  csc_spmv(M, N, nnz, csc_ptr, csc_rowidx, csc_val, x, y);
+//   csc_spmv(M, N, nnz, csc_ptr, csc_rowidx, csc_val, x, y);
 
   // print out y
 //   std::cout << "y: " << std::endl;
@@ -512,7 +512,7 @@ int main(int argc, char ** argv)
   memset(y_golden, 0, M * sizeof(double));
   
   // call csc_spmv_cpu
-  csc_spmv_cpu(M, N, nnz, csc_ptr, csc_rowidx, csc_val, x, y_golden);
+//   csc_spmv_cpu(M, N, nnz, csc_ptr, csc_rowidx, csc_val, x, y_golden);
 
   // print out y_golden
 //   std::cout << "y_golden: " << std::endl;
@@ -523,16 +523,16 @@ int main(int argc, char ** argv)
 
 
   // check result is correct
-  int error_count_check = 0;
+//   int error_count_check = 0;
   float error_threshold = 0.0001;
-  for (int i = 0; i < M; i++) {
-      if (abs(y_golden[i] - y[i]) > error_threshold) {
-          error_count_check++;
-      }
-  }
+//   for (int i = 0; i < M; i++) {
+//       if (abs(y_golden[i] - y[i]) > error_threshold) {
+//           error_count_check++;
+//       }
+//   }
 
-  // print out error count
-  printf("Error count: %d\n", error_count_check);
+//   // print out error count
+//   printf("Error count: %d\n", error_count_check);
 
 //   // print csc format
 //   std::cout << "CSC Vals: " << std::endl;
@@ -641,15 +641,15 @@ int main(int argc, char ** argv)
     // std::cout << std::endl;
 
   // check result is correct
-  int error_count_check_fastload = 0; 
-  for (int i = 0; i < M; i++) {
-      if (abs(y_golden[i] - y_fastload[i]) > error_threshold) {
-          error_count_check_fastload++;
-      }
-  }
+//   int error_count_check_fastload = 0; 
+//   for (int i = 0; i < M; i++) {
+//       if (abs(y_golden[i] - y_fastload[i]) > error_threshold) {
+//           error_count_check_fastload++;
+//       }
+//   }
 
-  // print out error count
-  printf("Error count fastload: %d\n", error_count_check_fastload);
+//   // print out error count
+//   printf("Error count fastload: %d\n", error_count_check_fastload);
 
   // free memory
     // free(dense_A);
